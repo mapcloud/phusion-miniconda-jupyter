@@ -38,6 +38,7 @@ ENV NOTEBOOK_DIR /opt/notebooks
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
+ENV JUPYTER_CONFIG_DIR /root/.ipython/profile_default/
 
 
 # relax the permissions on that directory and those files by making them world-readable
@@ -45,7 +46,8 @@ ENV LANGUAGE en_US.UTF-8
 RUN chmod 755 /etc/container_environment && \
     chmod 644 /etc/container_environment.sh /etc/container_environment.json
 #
-RUN mkdir -p $CONDA_DIR
+RUN mkdir -p $CONDA_DIR && \
+    mkdir -p $JUPYTER_CONFIG_DIR
 
 # Install conda as jovyan
 RUN cd /tmp && \
@@ -58,13 +60,17 @@ RUN cd /tmp && \
     $CONDA_DIR/bin/conda config --system --set auto_update_conda false && \
     conda clean -tipsy
 
+RUN conda create --name amasing && source activate amasing
 # Install Jupyter Notebook and Hub and other requirements --quiet
 COPY conda-requirements.txt /tmp/
-RUN conda install -y  --file /tmp/conda-requirements.txt
+RUN conda install -n amasing -y  --file /tmp/conda-requirements.txt
 
 # Installing pip requirements not available through conda
 COPY pip-requirements.txt /tmp/
 RUN pip install --requirement /tmp/pip-requirements.txt
+
+RUN ipython profile create && echo $(ipython locate)  
+
 
 # Make sure that notebooks is the current WORKDIR
 WORKDIR $NOTEBOOK_DIR
@@ -79,6 +85,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ## Adding jupyter daemon
 RUN mkdir /etc/service/jupyter
 ADD jupyter.sh /etc/service/jupyter/run
+
 
 # added HEALTHCHECK
 HEALTHCHECK CMD curl --fail http://localhost:8888/ || exit 1
