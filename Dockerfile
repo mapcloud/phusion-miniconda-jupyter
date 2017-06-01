@@ -20,6 +20,10 @@ RUN apt-get update --fix-missing && \
       wget \
       bzip2 \
       ca-certificates \
+      python3-pip \
+      software-properties-common \
+      git \
+      curl \
       sudo \
       locales
     # && \
@@ -69,8 +73,8 @@ RUN conda install -n amasing -y  --file /tmp/conda-requirements.txt
 COPY pip-requirements.txt /tmp/
 RUN pip install --requirement /tmp/pip-requirements.txt
 
-RUN ipython profile create && echo $(ipython locate)  
-
+RUN ipython profile create && echo $(ipython locate)
+COPY ipython_config.py $(ipython locate)/profile_default
 
 # Make sure that notebooks is the current WORKDIR
 WORKDIR $NOTEBOOK_DIR
@@ -88,4 +92,4 @@ ADD jupyter.sh /etc/service/jupyter/run
 
 
 # added HEALTHCHECK
-HEALTHCHECK CMD curl --fail http://localhost:8888/ || exit 1
+# HEALTHCHECK CMD curl --fail http://localhost:8888/ || exit 1
